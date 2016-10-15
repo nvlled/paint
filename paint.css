@@ -4,3 +4,13 @@ canvas.paint {
     width: 100%;
     height: 100%;
 }
+
+.color-preview {
+    background-color: red;
+    width: 90px;
+    height: 20px;
+    display: inline-block;
+    margin: 3px;
+    top: 5px;
+    position: relative;
+}

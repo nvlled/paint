@@ -19,7 +19,7 @@ function setupColorInput() {
     function setColor(value) {
         colorInput.value = value;
         colorPreview.style.backgroundColor = value;
-        colorPreviewInput.style.backgroundColor = value;
+        console.log("color value: ", value);
     }
 
     colorPreview.onclick = function() {
@@ -27,6 +27,7 @@ function setupColorInput() {
     }
     colorPreviewInput.onchange = function() {
         setColor(colorPreviewInput.value);
+        console.log(colorPreviewInput);
     }
 
     colorInput.onchange = function() {
@@ -36,7 +37,7 @@ function setupColorInput() {
             if (CSS_COLOR_NAMES[colorValue]) {
                 setColor(colorValue);
             } else {
-                colorInputMsg.textContent = "invalid color name";
+                colorInputMsg.textContent = "invalid color name: " + colorValue;
                 setColor("black");
             }
         } else if (colorValue[0] == "#") {
@@ -52,27 +53,67 @@ function setupColorInput() {
     colorInput.onchange();
 }
 
+var viewport;
+
+function setupResolution() {
+    var widthInput = document.querySelector(".resolution .width");
+    var heightInput = document.querySelector(".resolution .height");
+
+    function update(e, noConfirm) {
+        if (!noConfirm) {
+            var yes = confirm("changing size will erase everything. continue?");
+            if (!yes) {
+                widthInput.value = viewport.width;
+                heightInput.value = viewport.height;
+                return;
+            }
+        }
+
+        var width = widthInput.value.trim();
+        var height = heightInput.value.trim();
+
+        if (width == "" && height != "")
+            width = height;
+        else if (width != "" && height == "")
+            height = width;
+        else if (width == "" && height == "") {
+            width = "640";
+            height = "480";
+        }
+
+        widthInput.value = width;
+        heightInput.value = height;
+
+        canvas.width = width;
+        canvas.height = height;
+        canvas.style.width = canvas.width+"px";
+        canvas.style.height = canvas.height+"px";
+
+        viewport = {
+            width: canvas.width,
+            height: canvas.height,
+        };
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        console.log("setting resolution to ", canvas.width + "x" + canvas.height);
+    }
+
+    widthInput.onchange = update;
+    heightInput.onchange = update;
+    update(null, true);
+}
+
 function load() {
     canvas = document.querySelector("canvas.paint");
     context = canvas.getContext("2d");
 
-    setupColorInput();
-
-    var computedStyle = getComputedStyle(canvas);
     var canvasRect = canvas.getBoundingClientRect();
     var colorPreview = document.querySelector(".color-preview");
-
-    var viewport = {
-        width: parseInt(computedStyle.width),
-        height: parseInt(computedStyle.height),
-    };
-
-    canvas.width = viewport.width*3/4;
-    canvas.height = viewport.height*3/4;
 
     function translatePos(pos) {
         pos.x = pos.x * (canvas.width/viewport.width);
         pos.y = pos.y * (canvas.height/viewport.height);
+        console.log(canvas.width, canvas.height);
         return pos;
     }
 
@@ -83,6 +124,9 @@ function load() {
         }
     }
 
+    setupColorInput();
+    setupResolution();
+
     var shouldDraw = false;
     var lastPos;
 
@@ -90,7 +134,6 @@ function load() {
         var pos = translatePos(getPos(e));
 
         context.strokeStyle = colorPreview.style.backgroundColor;
-        console.log(context.strokeStyle);
 
         if (lastPos) {
             context.beginPath();

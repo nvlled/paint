@@ -8,11 +8,17 @@
 </head>
 <body>
     <div>
-        <input autocomplete="on" size="10" class="color" type="text" value="000" />
+        <input autocomplete="on" size="10" class="color" type="text" value="orange" />
         <div class="color-preview"></div>
         <input class="color-preview-input"
-             type="color" readonly style="display: none"/>
+             type="color" style="display: none"/>
         <span class="color-input-msg"></span>
+        <span class="resolution">
+            size:
+            <input class="width"  value="640" size="3">
+            x
+            <input class="height" value="480" size="3">
+        </span>
     </div>
     <canvas class="paint"></canvas>
 </body>

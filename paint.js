@@ -2,7 +2,6 @@ var canvas;
 var context;
 
 // TODO:
-// * undo/redo
 // * colors
 // * line, square, circle tools
 // * square select tool
@@ -103,6 +102,46 @@ function setupResolution() {
     update(null, true);
 }
 
+var canvasState = (function() {
+    var index = 0;
+    var stack = [];
+    var size = 10;
+
+    var module = {};
+    module.save = function() {
+        var data = context.getImageData(0, 0, canvas.width, canvas.height);
+        stack[++index] = data;
+        if (stack.length > size) {
+            stack.shift();
+            index--;
+        }
+    }
+
+    module.undo = function() {
+        if (index > 1) {
+            var data = stack[--index];
+            context.putImageData(data, 0, 0);
+        }
+    }
+
+    module.redo = function() {
+        if (index < stack.length - 1) {
+            var data = stack[++index];
+            context.putImageData(data, 0, 0);
+        }
+    }
+
+    return module;
+})();
+
+function setupCanvasState() {
+    var undoButton = document.querySelector("button.undo");
+    var redoButton = document.querySelector("button.redo");
+
+    undoButton.onclick = canvasState.undo;
+    redoButton.onclick = canvasState.redo;
+}
+
 function load() {
     canvas = document.querySelector("canvas.paint");
     context = canvas.getContext("2d");
@@ -113,11 +152,11 @@ function load() {
     function translatePos(pos) {
         pos.x = pos.x * (canvas.width/viewport.width);
         pos.y = pos.y * (canvas.height/viewport.height);
-        console.log(canvas.width, canvas.height);
         return pos;
     }
 
     function getPos(e) {
+        // TODO: include scrollbar offset in computation
         return {
             x: e.clientX - canvasRect.left,
             y: e.clientY - canvasRect.top,
@@ -126,13 +165,13 @@ function load() {
 
     setupColorInput();
     setupResolution();
+    setupCanvasState();
 
     var shouldDraw = false;
     var lastPos;
 
     function draw(e) {
         var pos = translatePos(getPos(e));
-
         context.strokeStyle = colorPreview.style.backgroundColor;
 
         if (lastPos) {
@@ -144,6 +183,7 @@ function load() {
         lastPos = pos;
     }
 
+    canvasState.save();
     canvas.onmousedown = function(e) {
         shouldDraw = true;
         draw(e);
@@ -154,8 +194,11 @@ function load() {
         }
     }
     canvas.onmouseup = function(e) {
-        shouldDraw = false;
-        lastPos = null;
+        if (shouldDraw) {
+            shouldDraw = false;
+            lastPos = null;
+            canvasState.save();
+        }
     }
     canvas.onmouseleave = canvas.onmouseup;
 }
